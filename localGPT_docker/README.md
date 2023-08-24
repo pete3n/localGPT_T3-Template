@@ -1,16 +1,5 @@
 # localGPT
 
-# JCEID implementation
-
-Getting started:
-- Rename example.env to .env
-- Run sudo docker-compose up from the localGPT path
-
-Notes:
- - Building the image for the first time will require download large model files (multi-Gb)
-
-# Original readme
-
 This project was inspired by the original [privateGPT](https://github.com/imartinez/privateGPT). Most of the description here is inspired by the original privateGPT.
 
 For detailed overview of the project, Watch these videos
