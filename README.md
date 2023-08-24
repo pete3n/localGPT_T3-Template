@@ -6,7 +6,7 @@ This project shows an example implementation of Local GPT with a web interface b
 ## Getting Started
 To run this project you first need to install Docker and Docker Compose, 
 follow the instructions located here: https://docs.docker.com/engine/install/
-to install Docker and here: https://docs.docker.com/compose/install/ to install Docker Compose.<br>
+to install Docker, and here: https://docs.docker.com/compose/install/ to install Docker Compose.<br>
 <br>
 Once you have both installed on your system, you can clone this repo with:
 
@@ -14,7 +14,7 @@ Once you have both installed on your system, you can clone this repo with:
 git clone https://github.com/pete3n/localGPT_T3-Template.git
 ```
 Or download and unzip the project.<br>
-Navigate to the root directory that contains the docker-compose.yml. If you are executing from a Linux
+Navigate to the project directory. If you are executing from a Linux
 command line run:<br>
 ```
 sudo docker-compose up
@@ -26,14 +26,15 @@ docker-compose up
 Note: it will take several minutes to download and build the containers for the first time.
 There is ~10Gb worth of data required between both the app container and local GPT container.<br>
 <br>
-Once the containers are started, you should be able to navigate your browser to localhost:3000
-(or whatever port you used for the application container, if you modified the .env file) and
-see the web interface:<br>
+Once the containers are started, you should be able to navigate your browser to localhost:3000 
+and see the web interface:<br>
 <br>
 ![example of project running](./lgpt_t3.jpg)
 <br>
 Once the service has finished processing the SOURCE_DOCUMENTS you should see the Flask server
-listening for requests as shown on the right.<br>
+listening for requests as shown on the right. Please be patient waiting for the GPT API server
+to start, especially if you are starting the container for the first time. If you try to use
+the web interface before the GPT API server is ready, you will receive fetch errors.<br>
 <br>
 ## Project Overview
 
@@ -69,9 +70,9 @@ the Local GPT container separately from the app container.<br>
 Most of the T3 configuration follows the T3 boilerplate code, but there are some specific
 changes for this project, along with the components and router for Local GPT:<br>
 <br>
-[lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts](lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts)
+[lgpt-t3-app/src/api/trpc/\[trpc\].ts](lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts)
 
-Added config block to allow for 100mb GET/POST bodies:<br>
+Configured the pages router to allow for 100mb GET/POST bodies:<br>
 ```
 export const config = {
     api: {
@@ -107,10 +108,10 @@ Added GPT_URL and API route environment variables:<br>
 [lgpt-t3-app/src/server/api/routers/lgptApi.ts](lgpt-t3-app/src/server/api/routers/lgptApi.ts)
 
 Is the tRPC router that handles API calls to the localGPT API server. Because tRPC doesn't have
-native (I tried the experimental support but couldn't get it to work properly) support for FormData 
-(and node doesn't have a compatible Blob type with the DOM's Blob type). Given this limitation,
-the easiest way to pass a validated data form between the frontend and backend is just to send
-a base64 encoded string as JSON. Which necessitates this function:<br>
+native support for FormData (I tried the experimental support, but couldn't get it to work properly),
+and node doesn't have a Blob type compatible with the DOM's Blob type, the easiest way to pass 
+a validated data form between the frontend and backend is just to send a base64 encoded string as JSON. 
+Which necessitates this function:<br>
 
 ```
 const base64ToBlob = (base64: string): Blob => {
@@ -158,7 +159,7 @@ that needs to validate the input data shape with Zod and reconstructs a FormData
 using the filename and our recreated file blob. If you are familiar with tRPC, none
 of the other procedures should require any explanation.<br>
 <br>
-[lgpt-t3-app/src/pages/components/GptDropzone.tsx](lgpt-t3-app/src/pages/components/GptDropzone.tsx)
+[lgpt-t3-app/src/components/GptDropzone.tsx](lgpt-t3-app/src/components/GptDropzone.tsx)
 <br>
 The GptDropzone uses React's Dropzone and Infinity Spinner for UI components to
 upload and ingest files to the Local GPT container. There are some hardcoded values for the
@@ -199,13 +200,13 @@ There is a known bug that ingesting will report that it has succeeded before the
 has finished. Ingesting can take a very long time depending on your configuration and 
 I couldn't find a good way to implement this with a REST API.<br>
 <br>
-[lgpt-t3-app/src/pages/components/GptPrompt.tsx](lgpt-t3-app/src/pages/components/GptPrompt.tsx)
+[lgpt-t3-app/src/components/GptPrompt.tsx](lgpt-t3-app/src/components/GptPrompt.tsx)
 <br>
 The GptPrompt is a React component that combines a form search bar with a 
 formatted text div to display respones in. It has state objects to track user prompts
 and Local GPT responses so that a chat history can be displayed.<br>
 <br>
-[lgpt-t3-app/src/pages/components/GptDelete.tsx](lgpt-t3-app/src/pages/components/GptDelete.tsx)
+[lgpt-t3-app/src/components/GptDelete.tsx](lgpt-t3-app/src/components/GptDelete.tsx)
 <br>
 The GptDeleteButton is a simple React button component a triggers the Local GPT API endpoint
 to delete and re-create the SOURCE_DOCUMENTS directory. I have notice a bug that if you configure
