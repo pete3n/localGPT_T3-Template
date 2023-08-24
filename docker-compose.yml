@@ -7,7 +7,7 @@ services:
       args:
         GPT_LISTENING_IP: ${GPT_LISTENING_IP}
         GPT_INTERNAL_PORT: ${GPT_INTERNAL_PORT}
-    command: ["python", "run_localGPT_API.py"]
+    command: /bin/sh -c "cp constitution.pdf /SOURCE_DOCUMENTS && python run_localGPT_API.py"
     image: local_gpt:latest
     container_name: local_gpt
     restart: unless-stopped
@@ -15,8 +15,6 @@ services:
       - lgpt_net
     ports:
       - "${GPT_EXTERNAL_PORT}:${GPT_INTERNAL_PORT}"
-    volumes:
-      - ./localGPT_docker/SOURCE_DOCUMENTS:/SOURCE_DOCUMENTS
   lgpt_app:
     build:
       context: ./lgpt-t3-app

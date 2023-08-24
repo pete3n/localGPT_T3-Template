@@ -4,6 +4,7 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { env } from "~/env.mjs";
+import { NextApiResponse } from "next";
 
 const base64ToBlob = (base64: string): Blob => {
     
@@ -30,6 +31,13 @@ interface PromptResponse {
     Prompt: string;
     Sources: Array<[string, string]>;
 }
+
+interface DeleteResponse {
+    message: string;
+}
+
+const isDeleteResponse = (obj: unknown): obj is DeleteResponse => 
+    typeof obj === 'object' && obj !== null && 'message' in obj && typeof (obj as DeleteResponse).message === 'string';
 
 export const lgptApiRouter = createTRPCRouter({
     saveDocument: publicProcedure
@@ -119,10 +127,20 @@ export const lgptApiRouter = createTRPCRouter({
                     method: 'GET',
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Failed to delete and recreate source directory: ${response.statusText}`);
+                // The localGPT API should by updated to return a status code for the delete endpoint operation
+                // That would be much easier to handle than this response
+                const rawResponse: unknown = await response.json();
+                
+                if (!isDeleteResponse(rawResponse)) {
+                    console.log('Unexpected API response format');
+                    throw new Error('Unexpected API response format');
                 } else {
-                    return true;
+                    const deleteResponse: DeleteResponse = rawResponse;
+                    if (deleteResponse.message.includes(`successfully deleted`)) {
+                        return true
+                    } else {
+                        throw new Error(`Failed to delete and recreate source directory: ${response.statusText}`);
+                    }
                 }
             } catch (error) {
                 console.error("Error deleting source directory: ", error);
