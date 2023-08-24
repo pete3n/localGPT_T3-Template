@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  gpt:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        GPT_LISTENING_IP: ${GPT_LISTENING_IP}
+        GPT_INTERNAL_PORT: ${GPT_INTERNAL_PORT}
+    command: ["python", "run_localGPT_API.py"]
+    image: local_gpt:latest
+    env_file:
+      - .env
+    container_name: local_gpt
+    restart: unless-stopped
+    networks:
+      - gpt_net
+    ports:
+      - "${GPT_EXTERNAL_PORT}:${GPT_INTERNAL_PORT}"
+    volumes:
+      - ./SOURCE_DOCUMENTS:/SOURCE_DOCUMENTS
+networks:
+  gpt_net:
+    name: gpt_net
