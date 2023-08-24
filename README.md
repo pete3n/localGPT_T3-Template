@@ -66,7 +66,7 @@ The localGPT_docker directory contains a seperate docker-compose.yml which can b
 the Local GPT container separately from the app container.<br>
 
 ### Changes to T3
-[lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts](pages/api/trpc/\[trpc\].ts)
+[lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts](lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts)
 
 Added config block to allow for 100mb GET/POST bodies:<br>
 ```
