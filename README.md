@@ -66,6 +66,9 @@ The localGPT_docker directory contains a seperate docker-compose.yml which can b
 the Local GPT container separately from the app container.<br>
 
 ### Changes to T3
+Most of the T3 configuration follows the T3 boilerplate code, but there are some specific
+changes for this project, along with the components and router for Local GPT:<br>
+<br>
 [lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts](lgpt-t3-app/src/pages/api/trpc/\[trpc\].ts)
 
 Added config block to allow for 100mb GET/POST bodies:<br>
@@ -79,6 +82,139 @@ export const config = {
     }
 };
 ```
+[lgpt-t3-app/src/env.mjs](lgpt-t3-app/src/env.mjs)
+
+Added GPT_URL and API route environment variables:<br>
+```
+  server: {
+    GPT_URL: z.string().url(),
+    GPT_PROMPT_ROUTE: z.string(),
+    GPT_PROMPT_BODY_KEY: z.string(),
+    GPT_SAVE_ROUTE: z.string(),
+    GPT_DELETE_ROUTE: z.string(),
+    GPT_INGEST_ROUTE: z.string(),
+    NODE_ENV: z.enum(["development", "test", "production"]),
+
+  runtimeEnv: {
+    GPT_URL: process.env.GPT_URL,
+    GPT_PROMPT_ROUTE: process.env.GPT_PROMPT_ROUTE,
+    GPT_PROMPT_BODY_KEY: process.env.GPT_PROMPT_BODY_KEY,
+    GPT_SAVE_ROUTE: process.env.GPT_SAVE_ROUTE,
+    GPT_DELETE_ROUTE: process.env.GPT_DELETE_ROUTE,
+    GPT_INGEST_ROUTE: process.env.GPT_INGEST_ROUTE,
+    NODE_ENV: process.env.NODE_ENV,
+```
+[lgpt-t3-app/src/server/api/routers/lgptApi.ts](lgpt-t3-app/src/server/api/routers/lgptApi.ts)
+
+Is the tRPC router that handles API calls to the localGPT API server. Because tRPC doesn't have
+native (I tried the experimental support but couldn't get it to work properly) support for FormData 
+(and node doesn't have a compatible Blob type with the DOM's Blob type). Given this limitation,
+the easiest way to pass a validated data form between the frontend and backend is just to send
+a base64 encoded string as JSON. Which necessitates this function:<br>
+
+```
+const base64ToBlob = (base64: string): Blob => {
+    const parts = base64.split(",");
+    if (parts.length !== 2) {
+        throw new Error("Invalid base64 format");
+    }
+
+    const byteCharacters = atob(parts[1] ?? "");
+    const byteNumbers = new Array(byteCharacters.length);
+
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "application/octet-stream" });
+
+    return blob;
+};
+```
+Since the Prompt response will send back a specific data structure, and for some reason
+the delete response doesn't send a standard HTTP response code, we also need to create
+interfaces to handle those data shapes and a function to type guard the delete response:<br>
+
+```
+interface PromptResponse {
+    Answer: string;
+    Prompt: string;
+    Sources: Array<[string, string]>;
+}
+
+interface DeleteResponse {
+    message: string;
+}
+
+const isDeleteResponse = (obj: unknown): obj is DeleteResponse =>
+    typeof obj === "object" &&
+    obj !== null &&
+    "message" in obj &&
+    typeof (obj as DeleteResponse).message === "string";
+```
+The saveDocument procedure is just a basic implementation of the tRPC public procedure
+that needs to validate the input data shape with Zod and reconstructs a FormData object
+using the filename and our recreated file blob. If you are familiar with tRPC, none
+of the other procedures should require any explanation.<br>
+<br>
+[lgpt-t3-app/src/pages/components/GptDropzone.tsx](lgpt-t3-app/src/pages/components/GptDropzone.tsx)
+<br>
+The GptDropzone uses React's Dropzone and Infinity Spinner for UI components to
+upload and ingest files to the Local GPT container. There are some hardcoded values for the
+dropzone which restricts the MIME types and extensions allowed and the filesize limit
+is set to 100Mb to match our tRPC config:<br>
+
+```
+const acceptedFormats = {
+    "application/pdf": [".pdf"],
+    "text/plain": [".txt"],
+    "text/csv": [".csv"],
+    "application/vnd.ms-excel": [".xls"],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+    ],
+};
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+// This is necessary because tRPC only supports JSON
+// It does have experimental FormData support, but I couldn't get it to function properly
+const fileToBase64 = (
+    file: File
+): Promise<{ name: string; base64: string }> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () =>
+            resolve({ name: file.name, base64: reader.result as string });
+        reader.onerror = (error) => reject(error);
+    });
+};
+
+```
+The rest of the Dropzone implementation is pretty standard. It has state objects to
+track the status of file uploads, file ingests, and succesfully uploaded and ingested files.
+There is a known bug that ingesting will report that it has succeeded before the ingest process
+has finished. Ingesting can take a very long time depending on your configuration and 
+I couldn't find a good way to implement this with a REST API.<br>
+<br>
+[lgpt-t3-app/src/pages/components/GptPrompt.tsx](lgpt-t3-app/src/pages/components/GptPrompt.tsx)
+<br>
+The GptPrompt is a React component that combines a form search bar with a 
+formatted text div to display respones in. It has state objects to track user prompts
+and Local GPT responses so that a chat history can be displayed.<br>
+<br>
+[lgpt-t3-app/src/pages/components/GptDelete.tsx](lgpt-t3-app/src/pages/components/GptDelete.tsx)
+<br>
+The GptDeleteButton is a simple React button component a triggers the Local GPT API endpoint
+to delete and re-create the SOURCE_DOCUMENTS directory. I have notice a bug that if you configure
+docker-compose to mount a persistent volume for your SOURCE_DOCUMENTS directory, if you 
+execute the delete operation, the script will execute correctly, but it will throw a file-permission
+error which prevents the API from reporting that it performed the operation and results in the
+UI showing that it failed.
+
+
 
 
 

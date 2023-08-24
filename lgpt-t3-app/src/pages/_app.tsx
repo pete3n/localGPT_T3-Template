@@ -6,9 +6,9 @@ const LgptT3App: AppType = ({ Component, pageProps }) => {
     return (
         <>
             <title>Local GPT Template</title>
-            <div className="grid grid-cols-auto">
+            <div className="grid-cols-auto grid">
                 <div className="flex flex-col items-center">
-                    <div className="min-h-screen flex-grow w-full flex justify-center">
+                    <div className="flex min-h-screen w-full flex-grow justify-center">
                         <Component {...pageProps} />
                     </div>
                 </div>
