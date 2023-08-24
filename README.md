@@ -62,7 +62,23 @@ RUN sed -i "s|app.run(.*)|app.run(debug=False, host='${GPT_LISTENING_IP}', port=
 CMD python run_localGPT.py --device_type $device_type
 ```
 This allows configuring the API to listen outside the container on a port specified in the environment file.<br>
-The localGPT_docker directory contains a seperate docker-compose.yml which can be used to pull 
+The localGPT_docker directory contains a seperate docker-compose.yml which can be used to launch
+the Local GPT container separately from the app container.<br>
+
+### Changes to T3
+[pages/api/trpc/[trpc].ts](pages/api/trpc/[trpc].ts)
+
+Added config block to allow for 100mb GET/POST bodies:<br>
+```
+export const config = {
+    api: {
+            bodyParser: {
+                sizeLimit: '100mb',
+            },
+        responseLimit: '100mb'
+    }
+};
+```
 
 
 
