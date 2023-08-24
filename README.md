@@ -14,23 +14,27 @@ Once you have both installed on your system, you can clone this repo with:
 git clone https://github.com/pete3n/localGPT_T3-Template.git
 ```
 Or download and unzip the project.<br>
-Navigate to the root directory that contains the docker-compose.yml and run:<br>
+Navigate to the root directory that contains the docker-compose.yml. If you are executing from a Linux
+command line run:<br>
 ```
 sudo docker-compose up
 ```
-If you are running from a Linux command line or:<br>
+Or run with Administrator privileges from a Windows command line or Powershell with:<br>
 ```
 docker-compose up
 ```
-With administrative privileges from a Windows command line or Powershell.<br>
 Note: it will take several minutes to download and build the containers for the first time.
 There is ~10Gb worth of data required between both the app container and local GPT container.<br>
 <br>
 Once the containers are started, you should be able to navigate your browser to localhost:3000
 (or whatever port you used for the application container, if you modified the .env file) and
 see the web interface:<br>
+<br>
 ![example of project running](./lgpt_t3.jpg)
-
+<br>
+Once the service has finished processing the SOURCE_DOCUMENTS you should see the Flask server
+listening for requests as shown on the right.<br>
+<br>
 ## Project Overview
 
 Both the app and gpt containers are configured with the docker-compose.yml in the 
