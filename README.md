@@ -1,4 +1,6 @@
 # T3 template project for Local GPT
+NOTE: This project is not being actively maintained.
+
 This project shows an example implementation of Local GPT with a web interface built with the T3 stack.<br>
 <br>
 	- Check out the Local GPT project here: https://github.com/PromtEngineer/localGPT<br>
